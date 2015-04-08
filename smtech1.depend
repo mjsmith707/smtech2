@@ -1,13 +1,17 @@
 # depslib dependency file v1.0
-1428474246 source:/home/msmith/Projects/smtech1/main.cpp
+1428476711 source:/home/msmith/Projects/smtech1/main.cpp
 	<iostream>
 	<vector>
 	<SDL2/SDL.h>
 	"SMRenderer.h"
 
-1428474246 /home/msmith/Projects/smtech1/SMRenderer.h
-	<SDL2/SDL.h>
+1428480499 /home/msmith/Projects/smtech1/SMRenderer.h
+	<iostream>
+	<thread>
+	<chrono>
+	<atomic>
 	<vector>
+	<SDL2/SDL.h>
 
 1428432479 /home/msmith/Projects/smtech1/SMPlane.h
 	"SMLine.h"
@@ -23,7 +27,7 @@
 1428432479 source:/home/msmith/Projects/smtech1/SMPlane.cpp
 	"SMPlane.h"
 
-1428474287 source:/home/msmith/Projects/smtech1/SMRenderer.cpp
+1428481409 source:/home/msmith/Projects/smtech1/SMRenderer.cpp
 	"SMRenderer.h"
 
 1428432480 source:/home/msmith/Projects/smtech1/SMVector.cpp

@@ -15,19 +15,74 @@ struct SMRenderer::SMVector {
     double z;
 } SMVector;
 
-SMRenderer::SMRenderer(SDL_Window*& window, SDL_Surface*& screen, Uint32 width, Uint32 height) : window(window), screen(screen), width(width), height(height) {
+SMRenderer::SMRenderer(Uint32 width, Uint32 height) : renderThread(), renderRunning(false), width(width), height(height) {
 
 }
 
+SMRenderer::~SMRenderer() {
+    renderRunning = false;
+    if (renderThread.joinable()) {
+        renderThread.join();
+    }
+}
+
+void SMRenderer::run() {
+    renderRunning = true;
+    renderThread = std::thread(&SMRenderer::threadinit, this);
+}
+
+void SMRenderer::threadinit() {
+    if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+        std::cout << "SDL Init Failed" << std::endl;
+        return;
+    }
+    else {
+        std::cout << "SDL Init Successful" << std::endl;
+    }
+
+    window = NULL;
+    screen = NULL;
+
+    window = SDL_CreateWindow("smtech1", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN);
+    if (window == NULL) {
+        std::cout << "Window not created: " << SDL_GetError() << std::endl;
+        return;
+    }
+    else {
+        screen = SDL_GetWindowSurface(window);
+        SDL_FillRect(screen, NULL, SDL_MapRGB(screen->format, 0x0, 0x0, 0x0));
+        SDL_UpdateWindowSurface(window);
+        SDL_Delay(2000);
+    }
+
+    render();
+}
+
 void SMRenderer::render() {
-    SDL_LockSurface(screen);
+    const int r_fps = 60;
+    const int skip_ticks = 1000/r_fps;
+    long next_tick = std::chrono::time_point_cast<lsec>(std::chrono::high_resolution_clock::now()).time_since_epoch().count();
 
     SMVector vecta { 50, 50, 0 };
     SMVector vectb { 200, 200, 0 };
-    drawLine(vecta, vectb, 0xFF);
+    SMVector vectc { 300, 20, 0 };
+    SMVector vectd { 500, 400, 0 };
 
-    SDL_UnlockSurface(screen);
-    SDL_UpdateWindowSurface(window);
+    while (renderRunning) {
+        long currtick = std::chrono::time_point_cast<lsec>(std::chrono::high_resolution_clock::now()).time_since_epoch().count();
+        while (currtick > next_tick) {
+            next_tick += skip_ticks;
+            std::this_thread::sleep_for(std::chrono::milliseconds((skip_ticks-currtick) > 0 ? skip_ticks-currtick : 1));
+        }
+
+        //SDL_LockSurface(screen);
+
+        drawLine(vecta, vectb, 0x00CC00);
+        drawLine(vectc, vectd, 0xFFFF66);
+
+        //SDL_UnlockSurface(screen);
+        SDL_UpdateWindowSurface(window);
+    }
 }
 
 void SMRenderer::drawLine(SMVector& a, SMVector& b, Uint32 color) {
