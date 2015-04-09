@@ -14,13 +14,19 @@
 #include <chrono>
 #include <atomic>
 #include <vector>
+#include <cmath>
 #include <SDL2/SDL.h>
 
 namespace smtech1 {
     class SMRenderer {
         private:
             typedef std::chrono::duration<long> lsec;
-            struct SMVector;
+            typedef struct SMVector {
+                double x;
+                double y;
+                double z;
+                double w;
+            } SMVector;
 
             std::thread renderThread;
             std::atomic<bool> renderRunning;
@@ -29,6 +35,8 @@ namespace smtech1 {
             SDL_Surface* screen;
             Uint32 width;
             Uint32 height;
+            SMVector camera { 0, 0, 0 };
+            double angle = 0;
 
             void threadinit();
             void render();
@@ -36,6 +44,8 @@ namespace smtech1 {
             void drawLine(SMVector& a, SMVector& b, Uint32 color);
             double dotProduct(const SMVector& vecta, const SMVector& vectb);
             SMVector crossProduct(const SMVector& vecta, const SMVector& vectb);
+            SMVector normalize(const SMVector& vecta);
+            SMVector project(const SMVector& vecta);
         public:
             SMRenderer(Uint32 width, Uint32 height);
             ~SMRenderer();

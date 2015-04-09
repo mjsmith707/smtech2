@@ -9,11 +9,7 @@
 #include "SMRenderer.h"
 using namespace smtech1;
 
-struct SMRenderer::SMVector {
-    double x;
-    double y;
-    double z;
-} SMVector;
+
 
 SMRenderer::SMRenderer(Uint32 width, Uint32 height) : renderThread(), renderRunning(false), width(width), height(height) {
 
@@ -59,29 +55,76 @@ void SMRenderer::threadinit() {
 }
 
 void SMRenderer::render() {
-    const int r_fps = 60;
-    const int skip_ticks = 1000/r_fps;
-    long next_tick = std::chrono::time_point_cast<lsec>(std::chrono::high_resolution_clock::now()).time_since_epoch().count();
+    //const int r_fps = 60;
+    //const int framerate = 1000/r_fps;
+    //long currtime = std::chrono::time_point_cast<lsec>(std::chrono::high_resolution_clock::now()).time_since_epoch().count();
+    SDL_Event event;
 
-    SMVector vecta { 50, 50, 0 };
-    SMVector vectb { 200, 200, 0 };
-    SMVector vectc { 300, 20, 0 };
-    SMVector vectd { 500, 400, 0 };
+    SMVector vecta { 0, 0, 200, 0 };
+    SMVector vectb { 0, 200, 200, 0 };
+    SMVector vectc { 200, 200, 200, 0 };
+    SMVector vectd { 200, 0, 200, 0 };
 
     while (renderRunning) {
-        long currtick = std::chrono::time_point_cast<lsec>(std::chrono::high_resolution_clock::now()).time_since_epoch().count();
-        while (currtick > next_tick) {
-            next_tick += skip_ticks;
-            std::this_thread::sleep_for(std::chrono::milliseconds((skip_ticks-currtick) > 0 ? skip_ticks-currtick : 1));
-        }
+        /*long newtime = std::chrono::time_point_cast<lsec>(std::chrono::high_resolution_clock::now()).time_since_epoch().count() - currtime;
+        while (newtime > framerate) {
+            currtime += newtime;
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        } */
 
         //SDL_LockSurface(screen);
+        SDL_FillRect(screen, NULL, SDL_MapRGB(screen->format, 0x0, 0x0, 0x0));
+        if (SDL_UpdateWindowSurface(window) != 0) {
+            std::cout << "UpdateWindowSurface Failed: " << SDL_GetError() << std::endl;
+        }
 
-        drawLine(vecta, vectb, 0x00CC00);
-        drawLine(vectc, vectd, 0xFFFF66);
+        SMVector tvecta = project(vecta);
+        SMVector tvectb = project(vectb);
+        SMVector tvectc = project(vectc);
+        SMVector tvectd = project(vectd);
+
+        drawLine(tvecta, tvectb, 0x0000FF);
+        drawLine(tvectb, tvectc, 0xCC0000);
+        drawLine(tvectc, tvectd, 0xFFFF00);
+        drawLine(tvectd, tvecta, 0x33CC33);
 
         //SDL_UnlockSurface(screen);
-        SDL_UpdateWindowSurface(window);
+        if (SDL_UpdateWindowSurface(window) != 0) {
+            std::cout << "UpdateWindowSurface Failed: " << SDL_GetError() << std::endl;
+        }
+
+        while (SDL_PollEvent(&event)) {
+            switch(event.type) {
+                case SDL_KEYDOWN:
+                    std::cout << "keydown" << std::endl;
+                    switch (event.key.keysym.sym) {
+                        case SDLK_w:
+                            camera.x += cos(angle);
+                            camera.y -= sin(angle);
+                            break;
+                        case SDLK_a:
+                            camera.x += sin(angle);
+                            camera.y -= cos(angle);
+                            break;
+                        case SDLK_s:
+                            camera.x -= cos(angle);
+                            camera.y += cos(angle);
+                            break;
+                        case SDLK_d:
+                            camera.x -= sin(angle);
+                            camera.y += cos(angle);
+                            break;
+                        case SDLK_q:
+                            angle += 0.1;
+                            break;
+                        case SDLK_e:
+                            angle -= 0.1;
+                            break;
+                    }
+                    std::cout << "camera: <" << camera.x << ", " << camera.y << ", " << camera.z << "> angle: " << angle << std::endl;
+            }
+        }
+
     }
 }
 
@@ -104,6 +147,10 @@ void SMRenderer::drawLine(SMVector& a, SMVector& b, Uint32 color) {
 }
 
 void SMRenderer::drawPixel(int x, int y, Uint32 pixel) {
+    // Debugging bounds checking
+    if ((x > width) || (x < 0) || (y > height) || (y < 0)) {
+        return;
+    }
     // http://www.libsdl.org/release/SDL-1.2.15/docs/html/guidevideo.html
     int bpp = screen->format->BytesPerPixel;
     /* Here p is the address to the pixel we want to set */
@@ -147,4 +194,30 @@ SMRenderer::SMVector SMRenderer::crossProduct(const SMVector& vecta, const SMVec
 
     SMVector cross { x, y, z };
     return cross;
+}
+
+SMRenderer::SMVector SMRenderer::normalize(const SMVector& vecta) {
+    double length = sqrt(vecta.x*vecta.x + vecta.y*vecta.y + vecta.z*vecta.z);
+    SMVector result;
+    result.x = vecta.x/length;
+    result.y = vecta.y/length;
+    result.z = vecta.z/length;
+    return result;
+}
+
+SMRenderer::SMVector SMRenderer::project(const SMVector& vect) {
+    SMVector result;
+
+    // Transform about camera
+    result.x = vect.x - camera.x;
+    result.y = vect.y - camera.y;
+
+    // Rotate about camera
+    result.z = result.x * cos(angle) + result.y * sin(angle);
+    result.x = result.x * sin(angle) - result.y * cos(angle);
+
+    // Perspective Projection
+
+
+    return result;
 }
