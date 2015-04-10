@@ -21,7 +21,6 @@ SMRenderer::~SMRenderer() {
     if (renderThread.joinable()) {
         renderThread.join();
     }
-    SDL_Quit;
 }
 
 // Public run call for render thread
@@ -60,6 +59,9 @@ void SMRenderer::threadinit() {
 
     // Enter render loop
     render();
+
+    // Cleanup
+    SDL_Quit;
 }
 
 // Main render thread loop function
@@ -71,10 +73,15 @@ void SMRenderer::render() {
     SDL_Event event;
 
     // Some sample vectors
-    SMVector vecta { 0, 0, 0 };
-    SMVector vectb { width, height, 0 };
-    SMVector vectc { 0, height, 0 };
-    SMVector vectd { width, 0, 0 };
+    SMVector vecta { 0, 200, 0 };
+    SMVector vectb { 0, 200, 200 };
+    SMVector vectc { 0, 0, 200 };
+    SMVector vectd { 0, 0, 0 };
+
+    SMVector vecte { 200, 0, 0 };
+    SMVector vectf { 200, 200, 0 };
+    SMVector vectg { 200, 200, 200 };
+    SMVector vecth { 200, 0, 200 };
 
     // Main render loop
     // Checks atomic renderRunning bool to see if we should quit
@@ -91,9 +98,33 @@ void SMRenderer::render() {
         SMVector tvectc = project(vectc);
         SMVector tvectd = project(vectd);
 
+        SMVector tvecte = project(vecte);
+        SMVector tvectf = project(vectf);
+        SMVector tvectg = project(vectg);
+        SMVector tvecth = project(vecth);
+
         // Render lines
-        drawLine(tvecta, tvectb, 0x0000FF);
-        drawLine(tvectc, tvectd, 0xFFCC00);
+        // Side 1
+        drawLine(tvecta, tvectb, 0x33CC33);
+        drawLine(tvectb, tvectc, 0xFF0000);
+        drawLine(tvectc, tvectd, 0x0000FF);
+        drawLine(tvectd, tvecta, 0xFFFF00);
+
+        // Side 2
+        drawLine(tvecte, tvectf, 0x33CC33);
+        drawLine(tvectf, tvectg, 0xFF0000);
+        drawLine(tvectg, tvecth, 0x0000FF);
+        drawLine(tvecth, tvecte, 0xFFFF00);
+
+        // Side 3
+        drawLine(tvecta, tvectf, 0xCC00CC);
+        drawLine(tvectb, tvectg, 0xCC00CC);
+
+        // Side 4
+        drawLine(tvectd, tvecte, 0xCC00CC);
+        drawLine(tvectc, tvecth, 0xCC00CC);
+
+
         drawPixel(camera.x, camera.y, 0x00FF00);
 
         // Flip buffer
@@ -119,13 +150,26 @@ void SMRenderer::render() {
                             camera.x += 2;
                             break;
                         case SDLK_q:
-                            angle += 0.1;
+                            orientation.z += 0.1;
                             break;
                         case SDLK_e:
-                            angle -= 0.1;
+                            orientation.z -= 0.1;
+                            break;
+                        case SDLK_i:
+                            orientation.y += 0.1;
+                            break;
+                        case SDLK_k:
+                            orientation.y -= 0.1;
+                            break;
+                        case SDLK_j:
+                            orientation.x -= 0.1;
+                            break;
+                        case SDLK_l:
+                            orientation.x += 0.1;
                             break;
                     }
-                    std::cout << "camera: <" << camera.x << ", " << camera.y << ", " << camera.z << "> angle: " << angle << std::endl;
+                    std::cout << "camera: <" << camera.x << ", " << camera.y << ", " << camera.z << ">" << std::endl
+                    << "angle: <" << orientation.x << ", " << orientation.y << ", " << orientation.z << ">" << std::endl;
             }
         }
 
@@ -253,17 +297,19 @@ SMRenderer::SMVector SMRenderer::normalize(const SMVector& vecta) {
 
 // Do some fancy vector math (i.e. nothing now)
 SMRenderer::SMVector SMRenderer::project(const SMVector& vect) {
+    SMVector temp;
     SMVector result;
+    // Do Perspective Projection
 
     // Translate about camera
-    // Why? IDK
-    //result.x = vect.x - camera.x;
-    //result.y = vect.y - camera.y;
+    temp.x = vect.x - camera.x;
+    temp.y = vect.y - camera.y;
+    temp.z = vect.z - camera.z;
 
-    // Rotate about camera
-    // Doesnt really work either
-    //result.x = cos(angle)*result.x - sin(angle)*result.y;
-    //result.y = sin(angle)*result.x + cos(angle)*result.y;
+    result.x = cos(orientation.y)*(sin(orientation.z)*temp.y + cos(orientation.z)*temp.x) - sin(orientation.y)*temp.z;
+    result.y = sin(orientation.x)*(cos(orientation.y)*temp.z + sin(orientation.y)*(sin(orientation.z)*temp.y + cos(orientation.z)*temp.x)) + cos(orientation.x)*(cos(orientation.z)*temp.y - sin(orientation.z)*temp.x);
+    result.z = cos(orientation.x)*(cos(orientation.y)*temp.z + sin(orientation.y)*(sin(orientation.z)*temp.y + cos(orientation.z)*temp.x)) - sin(orientation.x)*(cos(orientation.z)*temp.y - sin(orientation.z)*temp.x);
 
-    return vect;
+
+    return result;
 }

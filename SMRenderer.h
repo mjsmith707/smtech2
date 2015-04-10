@@ -44,6 +44,8 @@ namespace smtech1 {
 
             // Camera vector centered
             SMVector camera { width/2, height/2, 0 };
+            // Camera orientation angles
+            SMVector orientation { 0, 0, 0};
             // 2D angle
             double angle = 0;
 
