@@ -20,32 +20,48 @@
 namespace smtech1 {
     class SMRenderer {
         private:
+            // Probably useless
             typedef std::chrono::duration<long> lsec;
+
+            // Vector struct
             typedef struct SMVector {
                 double x;
                 double y;
                 double z;
-                double w;
             } SMVector;
 
+            // Render thread and control
             std::thread renderThread;
             std::atomic<bool> renderRunning;
 
+            // SDL pointers
             SDL_Window* window;
             SDL_Surface* screen;
-            Uint32 width;
-            Uint32 height;
-            SMVector camera { 0, 0, 0 };
+
+            // Screen width/height
+            const Uint32 width;
+            const Uint32 height;
+
+            // Camera vector centered
+            SMVector camera { width/2, height/2, 0 };
+            // 2D angle
             double angle = 0;
 
+            // Thread functions
             void threadinit();
             void render();
-            void drawPixel(int x, int y, Uint32 color);
-            void drawLine(SMVector& a, SMVector& b, Uint32 color);
+
+            // Render functions
+            inline void drawBlank();
+            inline void drawPixel(int x, int y, Uint32 color);
+            inline void drawLine(const SMVector& pt0, const SMVector& pt1, Uint32 color);
+
+            // Vector functions
             double dotProduct(const SMVector& vecta, const SMVector& vectb);
             SMVector crossProduct(const SMVector& vecta, const SMVector& vectb);
             SMVector normalize(const SMVector& vecta);
             SMVector project(const SMVector& vecta);
+
         public:
             SMRenderer(Uint32 width, Uint32 height);
             ~SMRenderer();
