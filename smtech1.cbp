@@ -13,6 +13,7 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-g" />
+					<Add directory="include" />
 				</Compiler>
 			</Target>
 			<Target title="Release">
@@ -22,6 +23,7 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-O2" />
+					<Add directory="include" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -35,9 +37,15 @@
 		<Linker>
 			<Add library="SDL2" />
 		</Linker>
-		<Unit filename="SMRenderer.cpp" />
-		<Unit filename="SMRenderer.h" />
-		<Unit filename="main.cpp" />
+		<Unit filename="include/MeshLoader.h" />
+		<Unit filename="include/SMLine.h" />
+		<Unit filename="include/SMMesh.h" />
+		<Unit filename="include/SMRenderer.h" />
+		<Unit filename="include/SMVector.h" />
+		<Unit filename="src/MeshLoader.cpp" />
+		<Unit filename="src/SMMesh.cpp" />
+		<Unit filename="src/SMRenderer.cpp" />
+		<Unit filename="src/main.cpp" />
 		<Extensions>
 			<code_completion />
 			<debugger />
