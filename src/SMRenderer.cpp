@@ -365,14 +365,27 @@ SMVector SMRenderer::project(const SMVector& vect) {
     // Projection
     SMVector result;
     if (temp2.z > 0) {
-        result.x = (temp2.x * width / temp2.z);
-        result.y = (temp2.y * height / temp2.z);
-        result.z = 0;
+        // Saving this for now
+        //result.x = (temp2.x * width / temp2.z);
+        //result.y = (temp2.y * height / temp2.z);
+        //result.z = temp2.z;
+
+        result.x = (temp2.x * (width/2) / temp2.z);
+        result.y = (temp2.y * (height/2) / temp2.z);
+        result.z = temp2.z;
     } else {
         result.x = 0;
         result.y = 0;
         result.z = 0;
     }
+
+    // Clamp results
+    /*
+    result.x = result.x > width ? width-1 : result.x;
+    result.x = result.x < 0 ? 0 : result.x;
+    result.y = result.y > height ? height-1 : result.y;
+    result.y = result.y < 0 ? 0 : result.y;
+    */
 
     return result;
 }
