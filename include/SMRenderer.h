@@ -26,9 +26,6 @@ namespace smtech1 {
             // Probably useless
             typedef std::chrono::duration<long> lsec;
 
-            // Meshes to render
-            std::vector<SMMesh> meshes;
-
             // Render thread and control
             std::thread renderThread;
             std::atomic<bool> renderRunning;
@@ -45,8 +42,16 @@ namespace smtech1 {
             SMVector camera { 0, 0, 0 };
             // Camera orientation angles
             SMVector orientation { 0, 0, 0};
-            // 2D angle
-            double angle = 0;
+
+            // Some useful pi constants;
+            static constexpr double pi = 3.14159265359;
+            static constexpr double pi2 = 6.28318530718;
+
+            // Bool to indicate whether the window has mouse grab
+            bool mousemode = false;
+
+            // Meshes to render
+            std::vector<SMMesh> meshes;
 
             // Thread functions
             void threadinit();
@@ -58,8 +63,12 @@ namespace smtech1 {
             inline void drawPixel(int x, int y, Uint32 color);
             inline void drawLine(const SMVector& pt0, const SMVector& pt1, Uint32 color);
 
+            // Input handler
+            inline void getInput(SDL_Event& event);
+
             // Vector functions
             double dotProduct(const SMVector& vecta, const SMVector& vectb);
+            bool intersection(const SMVector& vecta, const SMVector& vectb);
             SMVector crossProduct(const SMVector& vecta, const SMVector& vectb);
             SMVector normalize(const SMVector& vecta);
             SMVector project(const SMVector& vecta);

@@ -57,6 +57,9 @@ void SMRenderer::threadinit() {
         SDL_UpdateWindowSurface(window);
     }
 
+    // Grab Mouse
+    mousemode = SDL_SetRelativeMouseMode(SDL_TRUE) == 0 ? true : false;
+
     // Create some render data
     initMeshes();
 
@@ -67,6 +70,8 @@ void SMRenderer::threadinit() {
     SDL_Quit();
 }
 
+// Loads meshes into SMMesh objects for rendering
+// Will be replaced with a file format and more concrete Mesh structure
 void SMRenderer::initMeshes() {
     // Origin
     SMVector vecto {0, 0, 0 };
@@ -120,13 +125,10 @@ void SMRenderer::render() {
     //long currtime = std::chrono::time_point_cast<lsec>(std::chrono::high_resolution_clock::now()).time_since_epoch().count();
     SDL_Event event;
 
-
-
     // Main render loop
     // Checks atomic renderRunning bool to see if we should quit
     while (renderRunning) {
         // Frame capping still TODO
-
 
         // Erase framebuffer
         drawBlank();
@@ -145,53 +147,82 @@ void SMRenderer::render() {
 
         // Check for input
         // Will be spun off into a different class/thread someday
-        while (SDL_PollEvent(&event)) {
-            switch(event.type) {
-                case SDL_KEYDOWN:
-                    std::cout << "keydown" << std::endl;
-                    switch (event.key.keysym.sym) {
-                        case SDLK_w:
-                            camera.y += 2;
-                            break;
-                        case SDLK_a:
-                            camera.x -= 2;
-                            break;
-                        case SDLK_s:
-                            camera.y -= 2;
-                            break;
-                        case SDLK_d:
-                            camera.x += 2;
-                            break;
-                        case SDLK_z:
-                            camera.z += 2;
-                            break;
-                        case SDLK_c:
-                            camera.z -= 2;
-                            break;
-                        case SDLK_q:
-                            orientation.z += 0.1;
-                            break;
-                        case SDLK_e:
-                            orientation.z -= 0.1;
-                            break;
-                        case SDLK_i:
-                            orientation.y += 0.1;
-                            break;
-                        case SDLK_k:
-                            orientation.y -= 0.1;
-                            break;
-                        case SDLK_j:
-                            orientation.x -= 0.1;
-                            break;
-                        case SDLK_l:
-                            orientation.x += 0.1;
-                            break;
-                    }
-                    std::cout << "camera: <" << camera.x << ", " << camera.y << ", " << camera.z << ">" << std::endl
-                    << "angle: <" << orientation.x << ", " << orientation.y << ", " << orientation.z << ">" << std::endl;
-            }
-        }
+        getInput(event);
+    }
+}
 
+inline void SMRenderer::getInput(SDL_Event& event) {
+    while (SDL_PollEvent(&event)) {
+        switch(event.type) {
+            case SDL_KEYDOWN:
+                std::cout << "keydown" << std::endl;
+                // Needs movement calculation relative to orientation
+                switch (event.key.keysym.sym) {
+                    case SDLK_w:
+                        camera.z += 2;
+                        break;
+                    case SDLK_a:
+                        camera.x -= 2;
+                        break;
+                    case SDLK_s:
+                        camera.z -= 2;
+                        break;
+                    case SDLK_d:
+                        camera.x += 2;
+                        break;
+                    case SDLK_ESCAPE:
+                        if (mousemode) {
+                            mousemode = SDL_SetRelativeMouseMode(SDL_FALSE) == 0 ? false : true;
+                        }
+                        else {
+                            mousemode = SDL_SetRelativeMouseMode(SDL_TRUE) == 0 ? true : false;
+                        }
+                        break;
+                    case SDLK_q:
+                        renderRunning = false;
+                        break;
+                }
+            case SDL_MOUSEMOTION:
+                // Clamping camera angle to 0<2pi with wraparound;
+                if (event.motion.xrel < 0) {
+                    if (orientation.y < 0) {
+                        orientation.y = pi2;
+                    }
+                    else if (orientation.y > pi2) {
+                        orientation.y = 0;
+                    }
+                    orientation.y -= 0.01;
+                }
+                else if (event.motion.xrel > 0) {
+                    if (orientation.y < 0) {
+                        orientation.y = pi2;
+                    }
+                    else if (orientation.y > pi2) {
+                        orientation.y = 0;
+                    }
+                    orientation.y += 0.01;
+                }
+                else if (event.motion.yrel < 0) {
+                    if (orientation.x < 0) {
+                        orientation.x = pi2;
+                    }
+                    else if (orientation.x > pi2) {
+                        orientation.x = 0;
+                    }
+                    orientation.x += 0.01;
+                }
+                else if (event.motion.yrel > 0) {
+                    if (orientation.x < 0) {
+                        orientation.x = pi2;
+                    }
+                    else if (orientation.x > pi2) {
+                        orientation.x = 0;
+                    }
+                    orientation.x -= 0.01;
+                }
+                std::cout << "camera: <" << camera.x << ", " << camera.y << ", " << camera.z << ">" << std::endl
+                << "angle: <" << orientation.x << ", " << orientation.y << ", " << orientation.z << ">" << std::endl;
+        }
     }
 }
 
@@ -286,6 +317,11 @@ inline void SMRenderer::drawPixel(int x, int y, Uint32 pixel) {
     }
 }
 
+// Vector intersection
+bool SMRenderer::intersection(const SMVector& vecta, const SMVector& vectb) {
+    return false;
+}
+
 // Some useless vector math functions
 double SMRenderer::dotProduct(const SMVector& vecta, const SMVector& vectb) {
     double dot = vecta.x * vectb.x;
@@ -317,17 +353,29 @@ SMVector SMRenderer::normalize(const SMVector& vecta) {
 // Do some fancy vector math
 SMVector SMRenderer::project(const SMVector& vect) {
     SMVector temp;
-    SMVector result;
+    SMVector temp2;
 
-    // Translate about camera
+    // Camera Translation
     temp.x = vect.x - camera.x;
     temp.y = vect.y - camera.y;
     temp.z = vect.z - camera.z;
 
-    result.x = cos(orientation.y)*(sin(orientation.z)*temp.y + cos(orientation.z)*temp.x) - sin(orientation.y)*temp.z;
-    result.y = sin(orientation.x)*(cos(orientation.y)*temp.z + sin(orientation.y)*(sin(orientation.z)*temp.y + cos(orientation.z)*temp.x)) + cos(orientation.x)*(cos(orientation.z)*temp.y - sin(orientation.z)*temp.x);
-    result.z = cos(orientation.x)*(cos(orientation.y)*temp.z + sin(orientation.y)*(sin(orientation.z)*temp.y + cos(orientation.z)*temp.x)) - sin(orientation.x)*(cos(orientation.z)*temp.y - sin(orientation.z)*temp.x);
+    // Camera Transform
+    temp2.x = cos(orientation.y)*(sin(orientation.z)*temp.y + cos(orientation.z)*temp.x) - sin(orientation.y)*temp.z;
+    temp2.y = sin(orientation.x)*(cos(orientation.y)*temp.z + sin(orientation.y)*(sin(orientation.z)*temp.y + cos(orientation.z)*temp.x)) + cos(orientation.x)*(cos(orientation.z)*temp.y - sin(orientation.z)*temp.x);
+    temp2.z = cos(orientation.x)*(cos(orientation.y)*temp.z + sin(orientation.y)*(sin(orientation.z)*temp.y + cos(orientation.z)*temp.x)) - sin(orientation.x)*(cos(orientation.z)*temp.y - sin(orientation.z)*temp.x);
 
+    // Projection
+    SMVector result;
+    if (temp2.z > 0) {
+        result.x = (temp2.x * width / temp2.z);
+        result.y = (temp2.y * height / temp2.z);
+        result.z = 0;
+    } else {
+        result.z = 0;
+        result.y = 0;
+        result.z = 0;
+    }
 
     return result;
 }
