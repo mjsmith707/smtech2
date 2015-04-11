@@ -372,7 +372,7 @@ SMVector SMRenderer::project(const SMVector& vect) {
         result.y = (temp2.y * height / temp2.z);
         result.z = 0;
     } else {
-        result.z = 0;
+        result.x = 0;
         result.y = 0;
         result.z = 0;
     }
