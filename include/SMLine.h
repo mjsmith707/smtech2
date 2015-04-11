@@ -1,3 +1,8 @@
+//
+//  SMLine.h
+//  smtech1
+//
+
 #ifndef __smtech1__SMLine__
 #define __smtech1__SMLine__
 

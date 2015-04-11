@@ -2,9 +2,6 @@
 //  SMRenderer.cpp
 //  smtech1
 //
-//  Created by Matt on 4/2/15.
-//  Copyright (c) 2015 Matt. All rights reserved.
-//
 
 #include "SMRenderer.h"
 using namespace smtech1;

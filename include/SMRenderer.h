@@ -2,9 +2,6 @@
 //  SMRenderer.h
 //  smtech1
 //
-//  Created by Matt on 4/2/15.
-//  Copyright (c) 2015 Matt. All rights reserved.
-//
 
 #ifndef __smtech1__SMRenderer__
 #define __smtech1__SMRenderer__

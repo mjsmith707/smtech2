@@ -1,3 +1,8 @@
+//
+//  SMMesh.cpp
+//  smtech1
+//
+
 #include "SMMesh.h"
 using namespace smtech1;
 
