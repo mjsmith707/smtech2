@@ -235,7 +235,7 @@ inline void SMRenderer::getInput(SDL_Event& event) {
                     }
                     orientation.y += 0.01;
                 }
-                else if (event.motion.yrel < 0) {
+                if (event.motion.yrel < 0) {
                     if (orientation.x < 0) {
                         orientation.x = pi2;
                     }
@@ -322,7 +322,7 @@ inline void SMRenderer::drawLine(const SMVector& pt0, const SMVector& pt1, Uint3
 // Draw pixel to x,y coordinate
 inline void SMRenderer::drawPixel(int x, int y, Uint32 pixel) {
     // Debugging bounds checking
-    if ((x > width) || (x < 0) || (y > height) || (y < 0)) {
+    if ((x >= width) || (x < 0) || (y >= height) || (y < 0)) {
         return;
     }
 
