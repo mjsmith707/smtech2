@@ -12,6 +12,7 @@
 #include <atomic>
 #include <vector>
 #include <cmath>
+#include <numeric>
 #include <SDL2/SDL.h>
 #include "SMVector.h"
 #include "SMMesh.h"
@@ -21,7 +22,7 @@ namespace smtech1 {
     class SMRenderer {
         private:
             // Probably useless
-            typedef std::chrono::duration<long> lsec;
+            typedef std::chrono::duration<long, std::milli> msec;
 
             // Render thread and control
             std::thread renderThread;

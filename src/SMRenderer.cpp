@@ -23,7 +23,15 @@ SMRenderer::~SMRenderer() {
 // Public run call for render thread
 void SMRenderer::run() {
     renderRunning = true;
+// If OSX or Windows run in calling thread
+// If Linux/Unix run in new thread
+#if defined( __MACH__)
+    threadinit();
+#elif defined(__WINDOWS__)
+    threadinit();
+#else
     renderThread = std::thread(&SMRenderer::threadinit, this);
+#endif
 }
 
 // Render thread entry point
@@ -116,16 +124,35 @@ void SMRenderer::initMeshes() {
 
 // Main render thread loop function
 void SMRenderer::render() {
-    // Frame capping still TODO
-    //const int r_fps = 60;
-    //const int framerate = 1000/r_fps;
-    //long currtime = std::chrono::time_point_cast<lsec>(std::chrono::high_resolution_clock::now()).time_since_epoch().count();
+    // Frame capping still WIP
+    // std::chrono is wack to work with
+    const int r_fps = 60;
+    // Framerate as 1/60th of a second
+    using framerate = std::chrono::duration<uint64_t, std::ratio<1, r_fps>>;
+    uint64_t lastfpstime = 0;
+    uint64_t fps = 0;
+
     SDL_Event event;
 
+    auto lasttime = std::chrono::high_resolution_clock::now();
     // Main render loop
     // Checks atomic renderRunning bool to see if we should quit
     while (renderRunning) {
         // Frame capping still TODO
+        auto currtime = std::chrono::high_resolution_clock::now();
+        auto frametime = currtime - lasttime;
+        lasttime = currtime;
+
+        lastfpstime += frametime.count();
+        fps++;
+
+        // Take this with a grain of salt
+        // Needs to be converted to std::chrono somehow
+        if (lastfpstime > 1000000000) {
+            std::cout << "fps: " << fps << std::endl;
+            lastfpstime = 0;
+            fps = 0;
+        }
 
         // Erase framebuffer
         drawBlank();
@@ -145,6 +172,12 @@ void SMRenderer::render() {
         // Check for input
         // Will be spun off into a different class/thread someday
         getInput(event);
+
+        // This probably isn't correct.
+        while (frametime < framerate{1}) {
+            std::this_thread::sleep_for(frametime);
+            frametime += frametime;
+        }
     }
 }
 
@@ -180,6 +213,9 @@ inline void SMRenderer::getInput(SDL_Event& event) {
                         break;
                 }
             case SDL_MOUSEMOTION:
+                if (!mousemode) {
+                    break;
+                }
                 // Clamping camera angle to 0<2pi with wraparound;
                 if (event.motion.xrel < 0) {
                     if (orientation.y < 0) {
@@ -236,6 +272,12 @@ inline void SMRenderer::drawBlank() {
 // http://rosettacode.org/wiki/Bitmap/Bresenham%27s_line_algorithm#C.2B.2B
 // Wasn't for lack of trying..
 inline void SMRenderer::drawLine(const SMVector& pt0, const SMVector& pt1, Uint32 color) {
+    // More debug bounds checking
+    // Stop that long ass line draw
+    if ((fabs(pt0.x) > 10000000) || (fabs(pt0.y) > 10000000) || (fabs(pt1.x) > 10000000) || (fabs(pt1.y) > 10000000)) {
+        return;
+    }
+
     int x1 = pt0.x;
     int y1 = pt0.y;
     int x2 = pt1.x;
@@ -366,26 +408,14 @@ SMVector SMRenderer::project(const SMVector& vect) {
     SMVector result;
     if (temp2.z > 0) {
         // Saving this for now
-        //result.x = (temp2.x * width / temp2.z);
-        //result.y = (temp2.y * height / temp2.z);
-        //result.z = temp2.z;
-
-        result.x = (temp2.x * (width/2) / temp2.z);
-        result.y = (temp2.y * (height/2) / temp2.z);
+        result.x = (temp2.x * width / temp2.z);
+        result.y = (temp2.y * height / temp2.z);
         result.z = temp2.z;
     } else {
         result.x = 0;
         result.y = 0;
         result.z = 0;
     }
-
-    // Clamp results
-    /*
-    result.x = result.x > width ? width-1 : result.x;
-    result.x = result.x < 0 ? 0 : result.x;
-    result.y = result.y > height ? height-1 : result.y;
-    result.y = result.y < 0 ? 0 : result.y;
-    */
 
     return result;
 }
